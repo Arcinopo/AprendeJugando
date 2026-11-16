@@ -135,22 +135,11 @@ if not DEBUG:
     SECURE_HSTS_PRELOAD = True
 
 # --- CONFIGURACIÓN DE CORREO ELECTRÓNICO (BREVO / SMTP) ---
-EMAIL_HOST = config('EMAIL_HOST', default='smtp-relay.brevo.com').strip()
-EMAIL_PORT = config('EMAIL_PORT', default=587, cast=int)
-EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='').strip()
-EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='').replace(' ', '').strip()
-RAW_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='').strip()
+# --- CONFIGURACIÓN DE CORREO ELECTRÓNICO (BREVO API HTTPS) ---
+BREVO_API_KEY = config('BREVO_API_KEY', default='').strip()
+DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='').strip()
 
-if EMAIL_HOST_USER and EMAIL_HOST_PASSWORD and RAW_FROM_EMAIL:
-    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-    EMAIL_USE_TLS = True
-    EMAIL_USE_SSL = False
-    EMAIL_TIMEOUT = 15
-    DEFAULT_FROM_EMAIL = f"AprendeJugando <{RAW_FROM_EMAIL}>" if "<" not in RAW_FROM_EMAIL else RAW_FROM_EMAIL
-elif DEBUG:
-    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
-    DEFAULT_FROM_EMAIL = "AprendeJugando <noreply@aprendejugando.local>"
-else:
+if not DEBUG and (not BREVO_API_KEY or not DEFAULT_FROM_EMAIL):
     raise ImproperlyConfigured(
-        "Faltan credenciales SMTP (EMAIL_HOST_USER, EMAIL_HOST_PASSWORD, DEFAULT_FROM_EMAIL) con DEBUG=False."
+        "Faltan credenciales de correo (BREVO_API_KEY, DEFAULT_FROM_EMAIL) con DEBUG=False."
     )

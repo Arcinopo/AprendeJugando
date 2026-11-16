@@ -21,15 +21,17 @@ def _send_otp_email(user):
     otp_obj, _ = EmailVerificationCode.objects.get_or_create(user=user)
     code = otp_obj.generate_new_code()
 
+    _, sender_email = email.utils.parseaddr(settings.DEFAULT_FROM_EMAIL)
+    sender_email = sender_email.strip()
+
     payload = {
         "sender": {
             "name": "AprendeJugando",
-            "email": settings.DEFAULT_FROM_EMAIL.strip(),
+            "email": sender_email,
         },
         "to": [
             {
                 "email": user.email.strip(),
-                "name": (user.first_name or user.username).strip(),
             }
         ],
         "subject": "Tu código de verificación - AprendeJugando",
@@ -46,7 +48,7 @@ def _send_otp_email(user):
         data=json.dumps(payload).encode("utf-8"),
         headers={
             "accept": "application/json",
-            "api-key": config("BREVO_API_KEY").strip(),
+            "api-key": settings.BREVO_API_KEY,
             "content-type": "application/json",
         },
         method="POST",
@@ -58,7 +60,7 @@ def _send_otp_email(user):
                 raise RuntimeError(f"Brevo API respondió con estado {response.status}")
     except urllib.error.HTTPError as e:
         error_body = e.read().decode("utf-8", errors="replace")
-        logger.error("Brevo API rechazó la solicitud (%s): %s", e.code, error_body)
+        print(f"BREVO_API_ERROR ({e.code}) | sender={sender_email} | body={error_body}", flush=True)
         raise
 
 class CustomLoginView(LoginView):
