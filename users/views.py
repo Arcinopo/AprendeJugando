@@ -11,9 +11,11 @@ from django.conf import settings
 from decouple import config
 from .forms import CustomUserCreationForm, CustomAuthenticationForm
 from .models import EmailVerificationCode
+import urllib.error
+
+
 
 logger = logging.getLogger(__name__)
-
 
 def _send_otp_email(user):
     otp_obj, _ = EmailVerificationCode.objects.get_or_create(user=user)
@@ -22,12 +24,12 @@ def _send_otp_email(user):
     payload = {
         "sender": {
             "name": "AprendeJugando",
-            "email": settings.DEFAULT_FROM_EMAIL,
+            "email": settings.DEFAULT_FROM_EMAIL.strip(),
         },
         "to": [
             {
-                "email": user.email,
-                "name": user.first_name or user.username,
+                "email": user.email.strip(),
+                "name": (user.first_name or user.username).strip(),
             }
         ],
         "subject": "Tu código de verificación - AprendeJugando",
@@ -44,15 +46,20 @@ def _send_otp_email(user):
         data=json.dumps(payload).encode("utf-8"),
         headers={
             "accept": "application/json",
-            "api-key": config("BREVO_API_KEY"),
+            "api-key": config("BREVO_API_KEY").strip(),
             "content-type": "application/json",
         },
         method="POST",
     )
 
-    with urllib.request.urlopen(req, timeout=10) as response:
-        if response.status not in (200, 201, 202):
-            raise RuntimeError(f"Brevo API respondió con estado {response.status}")
+    try:
+        with urllib.request.urlopen(req, timeout=10) as response:
+            if response.status not in (200, 201, 202):
+                raise RuntimeError(f"Brevo API respondió con estado {response.status}")
+    except urllib.error.HTTPError as e:
+        error_body = e.read().decode("utf-8", errors="replace")
+        logger.error("Brevo API rechazó la solicitud (%s): %s", e.code, error_body)
+        raise
 
 class CustomLoginView(LoginView):
     template_name = 'users/login.html'
