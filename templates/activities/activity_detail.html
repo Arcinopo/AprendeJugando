@@ -1,0 +1,109 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ activity.title }} - AprendeJugando{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-12 col-md-9 col-lg-7">
+        <div class="mb-3">
+            <a href="{% url 'activities:workbook_list' %}" class="btn btn-outline-secondary rounded-pill fw-bold">
+                <i class="bi bi-arrow-left me-1"></i> Volver a Cuadernillos
+            </a>
+        </div>
+
+        <div class="card card-kid bg-white p-4 p-md-5 text-center">
+            <span class="badge bg-{{ activity.workbook.color_theme }} rounded-pill fs-6 px-3 py-2 mx-auto mb-3">
+                {{ activity.workbook.title }} &middot; Actividad #{{ activity.activity_number }}
+            </span>
+
+            <h1 class="h2 fw-bold mb-2">{{ activity.title }}</h1>
+            <p class="fs-5 text-muted mb-4">{{ activity.instruction }}</p>
+
+            <!-- Ilustración central -->
+            <!-- Ilustración central (soporta 1 o múltiples objetos para contar) -->
+            {% if activity.visual_emoji %}
+            <div class="my-3 d-flex flex-wrap justify-content-center align-items-center gap-3">
+                {% for icon_code in activity.get_visual_icons %}
+                    <img src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/{{ icon_code }}.svg"
+                         alt="{{ activity.title }}"
+                         width="{% if activity.get_visual_icons|length > 1 %}68{% else %}96{% endif %}"
+                         height="{% if activity.get_visual_icons|length > 1 %}68{% else %}96{% endif %}">
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <div class="bg-light rounded-4 p-3 my-3 border">
+                <span class="display-6 fw-bold font-kid text-dark">{{ activity.prompt_text }}</span>
+            </div>
+
+            {% csrf_token %}
+
+            {% if activity.activity_type == 'drawing_prompt' %}
+                <div class="d-grid gap-3 mt-4">
+                    <a href="{% url 'activities:canvas' %}?prompt={{ activity.title|urlencode }}"
+                       class="btn btn-warning btn-lg btn-kid fs-4">
+                        <i class="bi bi-palette-fill me-2"></i>Abrir Pizarra para Dibujar
+                    </a>
+                    <button type="button" onclick="submitAnswer('COMPLETADO')"
+                            class="btn btn-outline-success btn-lg rounded-4 fw-bold">
+                        <i class="bi bi-check-circle-fill me-1"></i> ¡Ya terminé mi dibujo!
+                    </button>
+                </div>
+            {% else %}
+                <!-- Botones grandes táctiles de opciones -->
+                <div class="row g-3 justify-content-center mt-3">
+                    {% for option in activity.get_options_list %}
+                    <div class="col-6 col-sm-4">
+                        <button type="button" onclick="submitAnswer('{{ option }}')"
+                                class="btn btn-outline-primary btn-lg btn-kid w-100 fs-3 py-3">
+                            {{ option }}
+                        </button>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            <!-- Zona de retroalimentación -->
+            <div id="feedbackBox" class="mt-4 d-none"></div>
+
+            {% if next_activity %}
+            <div id="nextBtnWrapper" class="mt-4 {% if not is_completed %}d-none{% endif %}">
+                <a href="{% url 'activities:activity_detail' next_activity.id %}"
+                   class="btn btn-success btn-lg btn-kid w-100 fs-4">
+                    Siguiente Actividad <i class="bi bi-arrow-right-circle-fill ms-2"></i>
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+async function submitAnswer(answer) {
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    const feedbackBox = document.getElementById('feedbackBox');
+    const nextWrapper = document.getElementById('nextBtnWrapper');
+
+    const response = await fetch("{% url 'activities:check_activity' activity.id %}", {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
+        },
+        body: JSON.stringify({ answer: answer })
+    });
+
+    const data = await response.json();
+    feedbackBox.classList.remove('d-none');
+
+    if (data.correct) {
+        feedbackBox.innerHTML = `<div class="alert alert-success rounded-4 fs-4 fw-bold">${data.message}</div>`;
+        if (nextWrapper) nextWrapper.classList.remove('d-none');
+    } else {
+        feedbackBox.innerHTML = `<div class="alert alert-warning rounded-4 fs-5 fw-bold">${data.message}</div>`;
+    }
+}
+</script>
+{% endblock %}

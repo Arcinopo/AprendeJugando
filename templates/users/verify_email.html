@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+
+{% block title %}Verificar Correo - AprendeJugando{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center my-3 my-md-5">
+    <div class="col-12 col-sm-10 col-md-7 col-lg-5">
+        <div class="card card-kid p-4 p-md-5 bg-white text-center">
+            <img src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f4e7.svg"
+                 alt="Correo" width="64" height="64" class="mx-auto mb-3">
+            <h1 class="h2 fw-bold text-primary">Revisa tu Correo</h1>
+            <p class="text-muted">
+                Enviamos un código de 6 dígitos a:<br>
+                <strong class="text-dark">{{ email }}</strong>
+            </p>
+
+            <!-- Formulario para validar el código -->
+            <form method="post" class="mt-3">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="verify">
+                <div class="mb-4">
+                    <input type="text" name="code" maxlength="6" inputmode="numeric" pattern="[0-9]{6}" required
+                           class="form-control form-control-lg rounded-4 text-center fw-bold fs-2"
+                           placeholder="000000" style="letter-spacing: 8px;" autofocus>
+                </div>
+                <button type="submit" class="btn btn-success btn-lg btn-kid w-100 fs-4">
+                    <i class="bi bi-shield-check me-2"></i> Activar mi Cuenta
+                </button>
+            </form>
+
+            <hr class="my-4">
+
+            <!-- Formulario independiente para reenviar el código -->
+            <p class="small text-muted mb-2">¿No recibiste el correo? Revisa Spam o pide otro código:</p>
+            <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="resend">
+                <button type="submit" class="btn btn-outline-primary rounded-pill fw-bold px-4">
+                    <i class="bi bi-arrow-clockwise me-1"></i> Reenviar código
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+
+{% block title %}Entrar a AprendeJugando{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center align-items-center my-2 my-md-4">
+    <div class="col-12 col-sm-10 col-md-7 col-lg-5">
+        <div class="card card-kid p-4 p-md-5 bg-white text-center">
+            <div class="mb-3">
+                <img src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f31f.svg" alt="Estrella" width="64" height="64">
+            </div>
+            <h1 class="h2 fw-bold text-primary mb-2">¡Hola de nuevo!</h1>
+            <p class="text-muted mb-4">Ingresa tu usuario mágico para empezar a jugar y aprender.</p>
+
+            <form method="post" novalidate class="text-start">
+                {% csrf_token %}
+                {% if form.non_field_errors %}
+                    <div class="alert alert-danger rounded-4 small fw-bold">
+                        Usuario o contraseña incorrectos. ¡Inténtalo de nuevo!
+                    </div>
+                {% endif %}
+
+                {% for field in form %}
+                    <div class="mb-3">
+                        <label class="form-label fw-bold fs-5">{{ field.label }}</label>
+                        {{ field }}
+                        {% if field.errors %}
+                            <div class="text-danger small fw-bold mt-1">{{ field.errors|striptags }}</div>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+
+                <button type="submit" class="btn btn-primary btn-lg btn-kid w-100 fs-4 mt-2">
+                    <i class="bi bi-play-circle-fill me-2"></i> ¡Entrar a Jugar!
+                </button>
+            </form>
+
+            <hr class="my-4">
+            <p class="mb-0 fw-bold">¿Aún no tienes cuenta?</p>
+            <a href="{% url 'users:register' %}" class="btn btn-outline-success btn-lg rounded-4 w-100 mt-2 fw-bold">
+                Crear Cuenta Gratis
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

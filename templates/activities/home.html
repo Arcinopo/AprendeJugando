@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+
+{% block title %}Inicio - AprendeJugando{% endblock %}
+
+{% block content %}
+<div class="card card-kid bg-white p-4 mb-4 border-start border-5 border-primary">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+        <div>
+            <h1 class="h2 fw-bold text-primary mb-1">¡Hola, {{ user.first_name|default:user.username }}!</h1>
+            <p class="text-muted fs-5 mb-0">¿Qué quieres aprender hoy?</p>
+        </div>
+        <div class="d-flex gap-2">
+            <span class="badge bg-warning text-dark fs-6 px-3 py-2 rounded-pill">
+                <i class="bi bi-star-fill me-1"></i> {{ completed_count }} Actividades
+            </span>
+            <span class="badge bg-info text-dark fs-6 px-3 py-2 rounded-pill">
+                <i class="bi bi-brush-fill me-1"></i> {{ drawings_count }} Dibujos
+            </span>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 g-md-4">
+    <!-- Módulo 1: Abecedario -->
+    <div class="col-12 col-md-4">
+        <a href="{% url 'activities:alphabet' %}" class="text-decoration-none">
+            <div class="card card-kid h-100 p-4 text-center bg-danger text-white">
+                <div class="my-2">
+                    <img src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f524.svg" alt="ABC" width="72" height="72">
+                </div>
+                <h2 class="h3 fw-bold mt-2">Abecedario Sonoro</h2>
+                <p class="mb-3 opacity-90">Toca cada letra para escuchar cómo suena.</p>
+                <span class="btn btn-light btn-lg rounded-pill fw-bold text-danger mt-auto">¡Escuchar!</span>
+            </div>
+        </a>
+    </div>
+
+    <!-- Módulo 2: Pizarra de Dibujo -->
+    <div class="col-12 col-md-4">
+        <a href="{% url 'activities:canvas' %}" class="text-decoration-none">
+            <div class="card card-kid h-100 p-4 text-center bg-warning text-dark">
+                <div class="my-2">
+                    <img src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f3a8.svg" alt="Arte" width="72" height="72">
+                </div>
+                <h2 class="h3 fw-bold mt-2">Pizarra Mágica</h2>
+                <p class="mb-3">Dibuja con tus dedos y guarda tus obras de arte.</p>
+                <span class="btn btn-dark btn-lg rounded-pill fw-bold mt-auto">¡Dibujar!</span>
+            </div>
+        </a>
+    </div>
+
+    <!-- Módulo 3: Cuadernillos de Actividades -->
+    <div class="col-12 col-md-4">
+        <a href="{% url 'activities:workbook_list' %}" class="text-decoration-none">
+            <div class="card card-kid h-100 p-4 text-center bg-success text-white">
+                <div class="my-2">
+                    <img src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f4da.svg" alt="Cuadernillos" width="72" height="72">
+                </div>
+                <h2 class="h3 fw-bold mt-2">Mis Cuadernillos</h2>
+                <p class="mb-3 opacity-90">Vocales, números, cuentos y retos creativos.</p>
+                <span class="btn btn-light btn-lg rounded-pill fw-bold text-success mt-auto">¡Practicar!</span>
+            </div>
+        </a>
+    </div>
+</div>
+{% endblock %}

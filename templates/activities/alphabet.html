@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Abecedario Sonoro - AprendeJugando{% endblock %}
+
+{% block content %}
+<div class="text-center mb-4">
+    <h1 class="display-5 fw-bold text-danger">Abecedario Mágico</h1>
+    <p class="fs-5 text-muted">Toca cualquier tarjeta para escuchar la letra y la palabra.</p>
+</div>
+
+<div class="row row-cols-2 row-cols-sm-3 row-cols-md-4 row-cols-lg-6 g-3">
+    {% for item in alphabet %}
+    <div class="col">
+        <div class="card card-kid letter-card bg-white p-3 text-center h-100"
+             onclick="playLetter('{{ item.slug }}', '{{ item.letter }}', '{{ item.word }}', this)">
+            <div class="display-4 fw-bold font-kid mb-1" style="color: {{ item.color }};">
+                {{ item.letter }}
+            </div>
+            <div class="my-2">
+                <img src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/{{ item.icon_code }}.svg"
+                     alt="{{ item.word }}" width="56" height="56" loading="lazy">
+            </div>
+            <div class="fw-bold fs-5 text-dark mt-auto">{{ item.word }}</div>
+            <audio id="audio-{{ item.slug }}" preload="none">
+                <source src="{% static 'audio/alphabet/' %}{{ item.slug }}.mp3" type="audio/mpeg">
+            </audio>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function playLetter(slug, letter, word, cardElement) {
+    // Efecto visual activo
+    document.querySelectorAll('.letter-card').forEach(c => c.classList.remove('playing'));
+    cardElement.classList.add('playing');
+    setTimeout(() => cardElement.classList.remove('playing'), 900);
+
+    const audioEl = document.getElementById('audio-' + slug);
+    if (audioEl) {
+        audioEl.currentTime = 0;
+        audioEl.play().catch(() => {
+            // Fallback automático con síntesis de voz en español si el archivo .mp3 aún no está subido
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const utter = new SpeechSynthesisUtterance(`${letter}. ${word}`);
+                utter.lang = 'es-ES';
+                utter.rate = 0.9;
+                window.speechSynthesis.speak(utter);
+            }
+        });
+    }
+}
+</script>
+{% endblock %}
