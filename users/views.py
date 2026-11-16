@@ -12,6 +12,7 @@ from decouple import config
 from .forms import CustomUserCreationForm, CustomAuthenticationForm
 from .models import EmailVerificationCode
 import urllib.error
+import email.utils
 
 
 
