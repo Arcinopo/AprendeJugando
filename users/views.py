@@ -1,12 +1,14 @@
+import json
 import logging
 import secrets
+import urllib.request
 from django.shortcuts import render, redirect
 from django.contrib.auth import login
 from django.contrib.auth.models import User
 from django.contrib.auth.views import LoginView, LogoutView
 from django.contrib import messages
-from django.core.mail import send_mail
 from django.conf import settings
+from decouple import config
 from .forms import CustomUserCreationForm, CustomAuthenticationForm
 from .models import EmailVerificationCode
 
@@ -16,19 +18,41 @@ logger = logging.getLogger(__name__)
 def _send_otp_email(user):
     otp_obj, _ = EmailVerificationCode.objects.get_or_create(user=user)
     code = otp_obj.generate_new_code()
-    send_mail(
-        subject="Tu código de verificación - AprendeJugando",
-        message=(
+
+    payload = {
+        "sender": {
+            "name": "AprendeJugando",
+            "email": settings.DEFAULT_FROM_EMAIL,
+        },
+        "to": [
+            {
+                "email": user.email,
+                "name": user.first_name or user.username,
+            }
+        ],
+        "subject": "Tu código de verificación - AprendeJugando",
+        "textContent": (
             f"¡Hola {user.first_name or user.username}!\n\n"
             f"Tu código mágico de 6 dígitos para activar tu cuenta en AprendeJugando es:\n\n"
             f"    {code}\n\n"
             f"Este código es válido por 15 minutos."
         ),
-        from_email=settings.DEFAULT_FROM_EMAIL,
-        recipient_list=[user.email],
-        fail_silently=False,
+    }
+
+    req = urllib.request.Request(
+        url="https://api.brevo.com/v3/smtp/email",
+        data=json.dumps(payload).encode("utf-8"),
+        headers={
+            "accept": "application/json",
+            "api-key": config("BREVO_API_KEY"),
+            "content-type": "application/json",
+        },
+        method="POST",
     )
 
+    with urllib.request.urlopen(req, timeout=10) as response:
+        if response.status not in (200, 201, 202):
+            raise RuntimeError(f"Brevo API respondió con estado {response.status}")
 
 class CustomLoginView(LoginView):
     template_name = 'users/login.html'
