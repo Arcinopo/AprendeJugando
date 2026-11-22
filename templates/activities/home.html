@@ -4,23 +4,44 @@
 
 {% block content %}
 <div class="card card-kid bg-white p-4 mb-4 border-start border-5 border-primary">
-    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-3">
         <div>
             <h1 class="h2 fw-bold text-primary mb-1">¡Hola, {{ user.first_name|default:user.username }}!</h1>
             <p class="text-muted fs-5 mb-0">¿Qué quieres aprender hoy?</p>
         </div>
-        <div class="d-flex gap-2">
+        <div class="d-flex flex-wrap gap-2">
             <span class="badge bg-warning text-dark fs-6 px-3 py-2 rounded-pill">
-                <i class="bi bi-star-fill me-1"></i> {{ completed_count }} Actividades
+                <i class="bi bi-star-fill me-1"></i> {{ completed_count }}/{{ total_activities }} Actividades
             </span>
             <span class="badge bg-info text-dark fs-6 px-3 py-2 rounded-pill">
                 <i class="bi bi-brush-fill me-1"></i> {{ drawings_count }} Dibujos
             </span>
+            <span class="badge bg-success text-white fs-6 px-3 py-2 rounded-pill">
+                <i class="bi bi-trophy-fill me-1"></i> {{ unlocked_achievements_count }}/{{ total_achievements_count }} Objetivos
+            </span>
+        </div>
+    </div>
+
+    <!-- Barra de progreso global -->
+    <div class="bg-light rounded-4 p-3 border">
+        <div class="d-flex justify-content-between align-items-center mb-1">
+            <span class="fw-bold text-dark">
+                <i class="bi bi-graph-up-arrow text-success me-1"></i> Tu Progreso General
+            </span>
+            <span class="fw-bold text-success">{{ overall_percentage }}%</span>
+        </div>
+        <div class="progress rounded-pill" style="height: 18px;" role="progressbar"
+             aria-label="Progreso general de actividades"
+             aria-valuenow="{{ overall_percentage }}" aria-valuemin="0" aria-valuemax="100">
+            <div class="progress-bar bg-success progress-bar-striped progress-bar-animated fw-bold"
+                 style="width: {{ overall_percentage }}%;">
+                {% if overall_percentage >= 15 %}{{ overall_percentage }}%{% endif %}
+            </div>
         </div>
     </div>
 </div>
 
-<div class="row g-3 g-md-4">
+<div class="row g-3 g-md-4 mb-5">
     <!-- Módulo 1: Abecedario -->
     <div class="col-12 col-md-4">
         <a href="{% url 'activities:alphabet' %}" class="text-decoration-none">
@@ -57,10 +78,56 @@
                     <img src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f4da.svg" alt="Cuadernillos" width="72" height="72">
                 </div>
                 <h2 class="h3 fw-bold mt-2">Mis Cuadernillos</h2>
-                <p class="mb-3 opacity-90">Vocales, números, cuentos y retos creativos.</p>
+                <p class="mb-3 opacity-90">Lectura, números, ciencias y retos creativos.</p>
                 <span class="btn btn-light btn-lg rounded-pill fw-bold text-success mt-auto">¡Practicar!</span>
             </div>
         </a>
+    </div>
+</div>
+
+<!-- Sección: Objetivos Alcanzados -->
+<div class="card card-kid bg-white p-4">
+    <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center mb-3 gap-2">
+        <div>
+            <h2 class="h3 fw-bold text-dark mb-0">
+                <i class="bi bi-trophy-fill text-warning me-2"></i>Objetivos Alcanzados
+            </h2>
+            <p class="text-muted mb-0">Completa actividades y dibujos para desbloquear todas tus medallas.</p>
+        </div>
+        <span class="badge bg-primary fs-6 px-3 py-2 rounded-pill align-self-start align-self-sm-center">
+            {{ unlocked_achievements_count }} de {{ total_achievements_count }} desbloqueados
+        </span>
+    </div>
+
+    <div class="row g-3">
+        {% for goal in achievements %}
+        <div class="col-12 col-sm-6 col-lg-4">
+            <div class="card h-100 rounded-4 border-2 {% if goal.unlocked %}border-{{ goal.theme }} bg-white shadow-sm{% else %}border-light bg-light opacity-75{% endif %}">
+                <div class="card-body d-flex align-items-center gap-3 p-3">
+                    <div class="rounded-circle p-2 d-flex align-items-center justify-content-center flex-shrink-0 {% if goal.unlocked %}bg-{{ goal.theme }} bg-opacity-10{% else %}bg-secondary bg-opacity-10{% endif %}"
+                         style="width: 60px; height: 60px;">
+                        <img src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/{{ goal.icon_code }}.svg"
+                             alt="{{ goal.title }}" width="38" height="38"
+                             {% if not goal.unlocked %}style="filter: grayscale(100%);"{% endif %}>
+                    </div>
+                    <div class="flex-grow-1">
+                        <div class="d-flex justify-content-between align-items-start gap-1">
+                            <h3 class="h6 fw-bold mb-1 text-dark">{{ goal.title }}</h3>
+                            {% if goal.unlocked %}
+                                <span class="badge bg-success rounded-pill"><i class="bi bi-check-lg"></i> Logrado</span>
+                            {% else %}
+                                <span class="badge bg-secondary rounded-pill"><i class="bi bi-lock-fill"></i></span>
+                            {% endif %}
+                        </div>
+                        <p class="small text-muted mb-1">{{ goal.description }}</p>
+                        <span class="badge {% if goal.unlocked %}bg-{{ goal.theme }} text-dark{% else %}bg-white text-muted border{% endif %} rounded-pill">
+                            {{ goal.progress_label }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
     </div>
 </div>
 {% endblock %}

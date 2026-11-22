@@ -69,7 +69,7 @@ h1, h2, h3, h4, .font-kid {
     border: 4px dashed #CBD5E1;
     border-radius: 1.5rem;
     overflow: hidden;
-    touch-action: none; /* Evita scroll accidental al dibujar en celular */
+    touch-action: none;
 }
 
 #drawingCanvas {
@@ -92,4 +92,548 @@ h1, h2, h3, h4, .font-kid {
 .color-swatch.active {
     transform: scale(1.2);
     border-color: #2B2D42;
+}
+
+/* ========================================================= */
+/* ETAPA 2: CAZADORES DE ERRORES, CÓMIC Y SOPA / CRUCIGRAMA  */
+/* ========================================================= */
+
+.error-token {
+    cursor: pointer;
+    padding: 2px 5px;
+    border-radius: 0.5rem;
+    transition: background-color 0.15s, color 0.15s;
+}
+
+.error-token:hover {
+    background-color: #E2E8F0;
+}
+
+.error-token.token-selected {
+    background-color: #FEF08A;
+    outline: 2px solid #EAB308;
+}
+
+.error-token.token-fixed {
+    background-color: #DCFCE7;
+    color: #166534;
+    font-weight: 800;
+    text-decoration: underline;
+}
+
+.error-token.token-ok-flash {
+    background-color: #E0F2FE;
+}
+
+/* Viñetas y Globos de Cómic */
+.comic-panel {
+    border: 3px solid #1E293B;
+    border-radius: 1.25rem;
+    box-shadow: 4px 4px 0 #1E293B;
+}
+
+.comic-narration {
+    background-color: #FEF08A;
+    border: 2px solid #1E293B;
+    border-radius: 0.5rem;
+    padding: 0.35rem 0.65rem;
+    font-size: 0.85rem;
+    font-weight: 700;
+}
+
+.speech-bubble, .thought-bubble {
+    position: relative;
+    background: #FFFFFF;
+    border: 2.5px solid #1E293B;
+    border-radius: 1.25rem;
+    padding: 0.75rem 1rem;
+}
+
+.thought-bubble {
+    border-style: dashed;
+    border-radius: 1.75rem;
+}
+
+.speech-bubble::after {
+    content: "";
+    position: absolute;
+    bottom: -12px;
+    left: 28px;
+    border-width: 12px 10px 0;
+    border-style: solid;
+    border-color: #1E293B transparent;
+    display: block;
+    width: 0;
+}
+
+.comic-input {
+    resize: none;
+    font-size: 0.95rem;
+    box-shadow: none !important;
+}
+
+/* Sopa de Letras */
+.word-grid {
+    display: grid;
+    gap: 5px;
+    background: #E2E8F0;
+    padding: 8px;
+    border-radius: 1rem;
+    width: 100%;
+    max-width: 360px;
+}
+
+.word-cell {
+    aspect-ratio: 1 / 1;
+    border: none;
+    border-radius: 0.5rem;
+    background: #FFFFFF;
+    font-family: 'Fredoka', sans-serif;
+    font-weight: 700;
+    font-size: 1.15rem;
+    color: #1E293B;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: transform 0.1s, background-color 0.15s;
+}
+
+.word-cell.cell-selected {
+    background-color: #3B82F6;
+    color: #FFFFFF;
+    transform: scale(1.08);
+}
+
+.word-cell.cell-found {
+    background-color: #10B981;
+    color: #FFFFFF;
+}
+
+/* Crucigrama Temático */
+.cw-grid {
+    display: grid;
+    gap: 3px;
+    background: #1E293B;
+    padding: 6px;
+    border-radius: 0.85rem;
+    width: 100%;
+    max-width: 330px;
+}
+
+.cw-cell {
+    position: relative;
+    aspect-ratio: 1 / 1;
+    border-radius: 0.25rem;
+}
+
+.cw-block {
+    background-color: #334155;
+}
+
+.cw-active {
+    background-color: #FFFFFF;
+}
+
+.cw-num {
+    position: absolute;
+    top: 1px;
+    left: 3px;
+    font-size: 0.65rem;
+    font-weight: 800;
+    color: #4361EE;
+    pointer-events: none;
+}
+
+.cw-input {
+    width: 100%;
+    height: 100%;
+    border: none;
+    background: transparent;
+    text-align: center;
+    font-family: 'Fredoka', sans-serif;
+    font-weight: 700;
+    font-size: 1.15rem;
+    text-transform: uppercase;
+    color: #1E293B;
+    padding: 0;
+}
+
+.cw-input:focus {
+    outline: 2px solid #4361EE;
+    background-color: #EFF6FF;
+}
+
+/* ========================================================= */
+/* ETAPA 3: LABERINTO EN PLANO (X, Y), SUDOKU 4x4 Y ESCENAS  */
+/* ========================================================= */
+
+/* Laberinto Numérico en Plano Cartesiano (X, Y) */
+.maze-board-wrapper {
+    background: linear-gradient(135deg, #EFF6FF 0%, #F5F3FF 100%);
+    border: 3px solid #93C5FD;
+    border-radius: 1.5rem;
+    padding: 1rem;
+    max-width: 470px;
+    width: 100%;
+    margin: 0 auto;
+    box-shadow: 0 10px 25px rgba(37, 99, 235, 0.1);
+}
+
+.maze-xy-layout {
+    display: grid;
+    grid-template-columns: 40px 1fr;
+    grid-template-rows: 34px 1fr;
+    gap: 8px;
+    align-items: center;
+}
+
+.maze-axis-corner {
+    font-family: 'Fredoka', sans-serif;
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: #1D4ED8;
+    background-color: #DBEAFE;
+    border: 2px solid #93C5FD;
+    border-radius: 0.65rem;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.maze-x-axis {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+}
+
+.maze-y-axis {
+    display: grid;
+    grid-template-rows: repeat(4, 1fr);
+    gap: 8px;
+    height: 100%;
+    align-items: center;
+}
+
+.maze-axis-pill {
+    background-color: #1E3A8A;
+    color: #FFFFFF;
+    font-family: 'Fredoka', sans-serif;
+    font-size: 0.82rem;
+    font-weight: 700;
+    border-radius: 999px;
+    padding: 4px 0;
+    text-align: center;
+    box-shadow: 0 2px 4px rgba(30, 58, 138, 0.2);
+}
+
+.maze-plane-container {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    background-color: #E0E7FF;
+    background-image:
+        linear-gradient(to right, rgba(99, 102, 241, 0.18) 1.5px, transparent 1.5px),
+        linear-gradient(to bottom, rgba(99, 102, 241, 0.18) 1.5px, transparent 1.5px);
+    background-size: 25% 25%;
+    padding: 8px;
+    border-radius: 1.25rem;
+    border: 3px solid #60A5FA;
+}
+
+.maze-svg-overlay {
+    position: absolute;
+    inset: 8px;
+    width: calc(100% - 16px);
+    height: calc(100% - 16px);
+    pointer-events: none;
+    z-index: 2;
+}
+
+.maze-grid {
+    position: relative;
+    z-index: 3;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: repeat(4, 1fr);
+    gap: 8px;
+    width: 100%;
+    height: 100%;
+}
+
+.maze-cell {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    border: 3px solid #CBD5E1;
+    border-radius: 1rem;
+    background-color: rgba(255, 255, 255, 0.96);
+    font-family: 'Fredoka', sans-serif;
+    font-weight: 700;
+    color: #334155;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2px;
+    cursor: pointer;
+    box-shadow: 0 3px 0 #CBD5E1;
+    transition: transform 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.maze-coord-mini {
+    position: absolute;
+    top: 3px;
+    left: 6px;
+    font-family: 'Nunito', sans-serif;
+    font-size: 0.62rem;
+    font-weight: 800;
+    opacity: 0.65;
+}
+
+.maze-dir-hint {
+    position: absolute;
+    top: 1px;
+    right: 6px;
+    font-size: 0.85rem;
+    font-weight: 900;
+    color: #2563EB;
+}
+
+.maze-val {
+    font-size: 1.35rem;
+    line-height: 1.05;
+}
+
+.maze-tag {
+    font-size: 0.62rem;
+    font-family: 'Nunito', sans-serif;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+}
+
+.maze-cell-adjacent {
+    border-color: #3B82F6;
+    background-color: #DBEAFE;
+    color: #1E3A8A;
+    box-shadow: 0 4px 0 #60A5FA;
+    animation: mazePulse 1.5s infinite;
+}
+
+.maze-cell-adjacent:hover {
+    transform: translateY(-2px) scale(1.04);
+    background-color: #BFDBFE;
+}
+
+.maze-cell-visited {
+    background-color: #DCFCE7;
+    border-color: #16A34A;
+    color: #14532D;
+    box-shadow: 0 3px 0 #22C55E;
+}
+
+.maze-cell-current {
+    background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%);
+    border-color: #312E81;
+    color: #FFFFFF;
+    box-shadow: 0 4px 10px rgba(79, 70, 229, 0.4);
+    transform: scale(1.05);
+    z-index: 4;
+}
+
+.maze-cell-goal {
+    background-color: #FEF3C7;
+    border-color: #F59E0B;
+    border-style: dashed;
+    color: #92400E;
+}
+
+.maze-cell-goal.maze-cell-current {
+    background: linear-gradient(135deg, #16A34A 0%, #059669 100%);
+    border-style: solid;
+    border-color: #064E3B;
+    color: #FFFFFF;
+}
+
+@keyframes mazePulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.45); }
+    50% { box-shadow: 0 0 0 5px rgba(59, 130, 246, 0); }
+}
+
+/* Sudoku Visual Cuadrado 4x4 con Cuadrantes 2x2 */
+.sudoku-board-wrapper {
+    background: linear-gradient(135deg, #FFFBEB 0%, #EFF6FF 100%);
+    border: 3px solid #FCD34D;
+    border-radius: 1.5rem;
+    padding: 1.15rem;
+    max-width: 420px;
+    width: 100%;
+    margin: 0 auto;
+    box-shadow: 0 10px 25px rgba(245, 158, 11, 0.12);
+}
+
+.sudoku-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: repeat(4, 1fr);
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    background-color: #1E293B;
+    border: 4px solid #1E293B;
+    border-radius: 1.1rem;
+    overflow: hidden;
+    box-shadow: 0 8px 18px rgba(15, 23, 42, 0.18);
+}
+
+.sudoku-cell {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    border: 1.5px solid #94A3B8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px;
+    cursor: pointer;
+    transition: transform 0.12s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+}
+
+.sudoku-quad-0 { background-color: #E0F2FE; }
+.sudoku-quad-1 { background-color: #FEF3C7; }
+.sudoku-quad-2 { background-color: #DCFCE7; }
+.sudoku-quad-3 { background-color: #F3E8FF; }
+
+.sudoku-border-right {
+    border-right: 4px solid #1E293B !important;
+}
+
+.sudoku-border-bottom {
+    border-bottom: 4px solid #1E293B !important;
+}
+
+.sudoku-fixed {
+    cursor: default;
+}
+
+.sudoku-fixed-badge {
+    width: 84%;
+    height: 84%;
+    background-color: rgba(255, 255, 255, 0.88);
+    border: 2px solid rgba(30, 41, 59, 0.18);
+    border-radius: 0.8rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+.sudoku-lock-dot {
+    position: absolute;
+    top: 3px;
+    right: 5px;
+    font-size: 0.6rem;
+    color: #64748B;
+}
+
+.sudoku-editable-slot {
+    width: 84%;
+    height: 84%;
+    background-color: #FFFFFF;
+    border: 2px dashed #64748B;
+    border-radius: 0.8rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.sudoku-related {
+    filter: brightness(0.96);
+    box-shadow: inset 0 0 0 2px rgba(59, 130, 246, 0.35);
+}
+
+.sudoku-selected {
+    background-color: #FDE047 !important;
+    box-shadow: inset 0 0 0 4px #D97706 !important;
+    z-index: 2;
+}
+
+.sudoku-selected .sudoku-editable-slot {
+    border-color: #D97706;
+    border-style: solid;
+    transform: scale(1.04);
+}
+
+.sudoku-palette-btn {
+    border-width: 2px;
+    transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.sudoku-palette-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(37, 99, 235, 0.15);
+}
+
+/* Encuentra las Diferencias */
+.diff-scene-box {
+    position: relative;
+    width: 100%;
+    height: 270px;
+    border-radius: 1.25rem;
+    border: 3px solid #CBD5E1;
+    background: linear-gradient(180deg, #BAE6FD 0%, #E0F2FE 62%, #BBF7D0 62%, #86EFAC 100%);
+    overflow: hidden;
+}
+
+.diff-scene-interactive {
+    border-color: #3B82F6;
+    cursor: crosshair;
+}
+
+.diff-item {
+    position: absolute;
+    pointer-events: none;
+    user-select: none;
+}
+
+.diff-hotspot {
+    position: absolute;
+    width: 54px;
+    height: 54px;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    border: 3px solid transparent;
+    background: transparent;
+    cursor: pointer;
+    transition: border-color 0.2s, background-color 0.2s;
+}
+
+.diff-hotspot.diff-found {
+    border-color: #16A34A;
+    background-color: rgba(34, 197, 94, 0.22);
+    box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.25);
+}
+
+/* ========================================================= */
+/* ETAPA 4: CIENCIAS Y CLASIFICACIÓN POR CATEGORÍAS          */
+/* ========================================================= */
+
+.sort-bucket {
+    background-color: #F8FAFC;
+    border-color: #CBD5E1 !important;
+    min-height: 165px;
+    cursor: pointer;
+    transition: border-color 0.15s, background-color 0.15s, transform 0.12s;
+}
+
+.sort-bucket-ready {
+    border-color: #3B82F6 !important;
+    border-style: dashed !important;
+    background-color: #EFF6FF;
+}
+
+.sort-bucket-ready:hover {
+    transform: translateY(-2px);
 }

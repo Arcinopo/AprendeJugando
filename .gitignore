@@ -1,8 +1,25 @@
-﻿.venv/
+.venv/
 venv/
 __pycache__/
 *.py[cod]
+
+# Local environment and credentials
 .env
+.env.*
+!.env.example
+
+# Local project handoff report
+/REPORTE_TECNICO_GEMINI.md
+
+# Local build artifacts and databases
 staticfiles/
-db.sqlite3
+*.sqlite3
+*.db
+
+# Private keys and certificate bundles
+*.pem
+*.key
+*.p12
+*.pfx
+
 .DS_Store

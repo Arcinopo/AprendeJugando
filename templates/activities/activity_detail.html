@@ -1,10 +1,15 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}{{ activity.title }} - AprendeJugando{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-12 col-md-9 col-lg-7">
+<div class="row justify-content-center"
+     id="activityWorkspace"
+     data-activity-type="{{ activity.activity_type }}"
+     data-check-url="{% url 'activities:check_activity' activity.id %}"
+     data-default-question="{{ activity.prompt_text }}">
+    <div class="col-12 col-md-10 col-lg-9">
         <div class="mb-3">
             <a href="{% url 'activities:workbook_list' %}" class="btn btn-outline-secondary rounded-pill fw-bold">
                 <i class="bi bi-arrow-left me-1"></i> Volver a Cuadernillos
@@ -19,8 +24,7 @@
             <h1 class="h2 fw-bold mb-2">{{ activity.title }}</h1>
             <p class="fs-5 text-muted mb-4">{{ activity.instruction }}</p>
 
-            <!-- Ilustración central -->
-            <!-- Ilustración central (soporta 1 o múltiples objetos para contar) -->
+            <!-- Ilustración central (soporta 1 o múltiples objetos) -->
             {% if activity.visual_emoji %}
             <div class="my-3 d-flex flex-wrap justify-content-center align-items-center gap-3">
                 {% for icon_code in activity.get_visual_icons %}
@@ -32,35 +36,227 @@
             </div>
             {% endif %}
 
-            <div class="bg-light rounded-4 p-3 my-3 border">
-                <span class="display-6 fw-bold font-kid text-dark">{{ activity.prompt_text }}</span>
-            </div>
-
             {% csrf_token %}
+            {{ activity.extra_data|json_script:"activity-extra-data" }}
 
-            {% if activity.activity_type == 'drawing_prompt' %}
-                <div class="d-grid gap-3 mt-4">
-                    <a href="{% url 'activities:canvas' %}?prompt={{ activity.title|urlencode }}"
-                       class="btn btn-warning btn-lg btn-kid fs-4">
-                        <i class="bi bi-palette-fill me-2"></i>Abrir Pizarra para Dibujar
-                    </a>
-                    <button type="button" onclick="submitAnswer('COMPLETADO')"
-                            class="btn btn-outline-success btn-lg rounded-4 fw-bold">
-                        <i class="bi bi-check-circle-fill me-1"></i> ¡Ya terminé mi dibujo!
-                    </button>
+            <!-- ========================================================= -->
+            <!-- TIPO A: CAZADORES DE ERRORES (Primaria - Lenguaje)        -->
+            <!-- ========================================================= -->
+            {% if activity.activity_type == 'error_hunter' %}
+                <div class="text-start bg-light rounded-4 p-4 my-3 border border-2">
+                    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                        <span class="badge bg-warning text-dark rounded-pill px-3 py-2">
+                            <i class="bi bi-search me-1"></i> Toca las palabras con errores
+                        </span>
+                        <span id="hunterCounter" class="fw-bold text-primary small"></span>
+                    </div>
+
+                    <p id="hunterTextContainer" class="fs-4 lh-lg mb-0 text-dark"></p>
                 </div>
-            {% else %}
-                <!-- Botones grandes táctiles de opciones -->
+
+                <div id="hunterCorrectionBox" class="card border-warning bg-warning bg-opacity-10 rounded-4 p-3 my-3 d-none">
+                    <p id="hunterHintText" class="fw-bold text-dark mb-2"></p>
+                    <div id="hunterOptionsContainer" class="d-flex flex-wrap justify-content-center gap-2"></div>
+                </div>
+
+                <div id="hunterToast" class="small fw-bold text-muted my-2"></div>
+
+                <button type="button" id="btnSubmitErrorHunter"
+                        class="btn btn-primary btn-lg btn-kid fs-4 mt-3">
+                    <i class="bi bi-check2-circle me-2"></i>Comprobar Correcciones
+                </button>
+
+            <!-- ========================================================= -->
+            <!-- TIPO B: COMPLETAR EL CÓMIC (Primaria - Expresión Escrita) -->
+            <!-- ========================================================= -->
+            {% elif activity.activity_type == 'comic_fill' %}
+                {% if activity.prompt_text %}
+                <div class="bg-light rounded-4 p-3 mb-3 border text-start">
+                    <p class="mb-0 fs-5 text-dark"><i class="bi bi-chat-quote-fill text-primary me-2"></i>{{ activity.prompt_text }}</p>
+                </div>
+                {% endif %}
+
+                <div id="comicPanelsContainer" class="row g-3 my-2 text-start"></div>
+
+                <button type="button" id="btnSubmitComicFill"
+                        class="btn btn-success btn-lg btn-kid fs-4 mt-4">
+                    <i class="bi bi-stars me-2"></i>¡Terminar mi Cómic!
+                </button>
+
+            <!-- ========================================================= -->
+            <!-- TIPO C: SOPA DE LETRAS Y CRUCIGRAMA TEMÁTICO              -->
+            <!-- ========================================================= -->
+            {% elif activity.activity_type == 'word_search' %}
+                <div id="wordGameWrapper" class="my-3"></div>
+
+            <!-- ========================================================= -->
+            <!-- TIPO D: LABERINTO NUMÉRICO EN PLANO (X, Y)                -->
+            <!-- ========================================================= -->
+            {% elif activity.activity_type == 'math_maze' %}
+                <div class="bg-primary bg-opacity-10 border border-2 border-primary rounded-4 p-3 my-3">
+                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
+                        <div class="d-flex align-items-center gap-2 flex-wrap">
+                            <span id="mazeStepLabel" class="badge bg-primary rounded-pill fs-6 px-3 py-2"></span>
+                            <span id="mazeCoordBadge" class="badge bg-dark rounded-pill fs-6 px-3 py-2"></span>
+                        </div>
+                        <button type="button" id="resetMazeBtn" class="btn btn-sm btn-outline-danger rounded-pill fw-bold">
+                            <i class="bi bi-arrow-counterclockwise me-1"></i>Reiniciar ruta
+                        </button>
+                    </div>
+                    <div id="mazeOperationBox" class="display-5 fw-bold font-kid text-primary my-2"></div>
+                    <p id="mazeHelperText" class="small text-dark fw-semibold mb-0">
+                        Muévete en el plano (X, Y) tocando la casilla vecina con el resultado correcto hasta llegar a la meta.
+                    </p>
+                </div>
+
+                <div class="my-3">
+                    <div class="maze-board-wrapper">
+                        <div class="maze-xy-layout">
+                            <div class="maze-axis-corner">Y \ X</div>
+                            <div id="mazeXAxis" class="maze-x-axis"></div>
+                            <div id="mazeYAxis" class="maze-y-axis"></div>
+                            <div class="maze-plane-container">
+                                <svg id="mazeTrailSvg" class="maze-svg-overlay" preserveAspectRatio="none"></svg>
+                                <div id="mathMazeGrid" class="maze-grid"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            <!-- ========================================================= -->
+            <!-- TIPO E: SUDOKU VISUAL CUADRADO 4x4                        -->
+            <!-- ========================================================= -->
+            {% elif activity.activity_type == 'visual_sudoku' %}
+                <div class="my-3">
+                    <div class="d-flex justify-content-center align-items-center gap-2 flex-wrap mb-3">
+                        <span class="badge bg-warning text-dark rounded-pill fs-6 px-3 py-2">
+                            <i class="bi bi-grid-3x3-gap-fill me-1"></i> Tablero Cuadrado 4×4 (Bloques 2×2)
+                        </span>
+                        <span id="sudokuProgressBadge" class="badge bg-primary rounded-pill fs-6 px-3 py-2"></span>
+                    </div>
+
+                    <p class="small text-muted mb-3">
+                        Toca una casilla vacía del cuadrado y elige la figura correcta. No puedes repetir figuras en la misma <strong>fila</strong>, <strong>columna</strong> ni <strong>bloque 2×2 de color</strong>.
+                    </p>
+
+                    <div class="sudoku-board-wrapper mb-4">
+                        <div id="visualSudokuGrid" class="sudoku-grid"></div>
+                    </div>
+
+                    <div class="bg-light rounded-4 p-3 border">
+                        <span class="small fw-bold text-dark d-block mb-2">
+                            <i class="bi bi-hand-index-thumb-fill text-primary me-1"></i> Elige una figura para colocar en la casilla seleccionada:
+                        </span>
+                        <div id="sudokuPalette" class="d-flex flex-wrap justify-content-center gap-2"></div>
+                    </div>
+                </div>
+
+                <button type="button" id="btnSubmitVisualSudoku"
+                        class="btn btn-primary btn-lg btn-kid fs-4 mt-3">
+                    <i class="bi bi-check2-circle me-2"></i>Comprobar Sudoku
+                </button>
+
+            <!-- ========================================================= -->
+            <!-- TIPO F: ENCUENTRA LAS DIFERENCIAS                         -->
+            <!-- ========================================================= -->
+            {% elif activity.activity_type == 'spot_differences' %}
+                <div class="bg-light rounded-4 p-3 my-3 border">
+                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+                        <span class="small text-muted">
+                            Compara ambas escenas y toca las diferencias en la <strong>Imagen B (derecha)</strong>.
+                        </span>
+                        <span id="diffCounterBadge" class="badge bg-success rounded-pill fs-6 px-3 py-2"></span>
+                    </div>
+
+                    <div class="row g-3">
+                        <div class="col-12 col-md-6">
+                            <div class="fw-bold small text-secondary mb-1">Imagen A (Original)</div>
+                            <div id="diffSceneA" class="diff-scene-box"></div>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <div class="fw-bold small text-primary mb-1">Imagen B (Toca aquí las diferencias)</div>
+                            <div id="diffSceneB" class="diff-scene-box diff-scene-interactive"></div>
+                        </div>
+                    </div>
+
+                    <div id="diffFoundList" class="d-flex flex-wrap justify-content-center gap-2 mt-3"></div>
+                </div>
+
+            <!-- ========================================================= -->
+            <!-- TIPO G: PROBLEMA MATEMÁTICO CONTEXTUALIZADO               -->
+            <!-- ========================================================= -->
+            {% elif activity.activity_type == 'math_problem' %}
+                <div id="mathProblemCard" class="bg-light rounded-4 p-4 my-3 border text-start"></div>
+
                 <div class="row g-3 justify-content-center mt-3">
                     {% for option in activity.get_options_list %}
                     <div class="col-6 col-sm-4">
-                        <button type="button" onclick="submitAnswer('{{ option }}')"
-                                class="btn btn-outline-primary btn-lg btn-kid w-100 fs-3 py-3">
+                        <button type="button"
+                                data-answer="{{ option }}"
+                                class="btn btn-outline-primary btn-lg btn-kid w-100 fs-3 py-3 js-submit-answer">
                             {{ option }}
                         </button>
                     </div>
                     {% endfor %}
                 </div>
+
+            <!-- ========================================================= -->
+            <!-- TIPO H: EXPERIMENTO CASERO PASO A PASO (Ciencias)         -->
+            <!-- ========================================================= -->
+            {% elif activity.activity_type == 'science_experiment' %}
+                <div id="scienceExperimentWrapper" class="text-start my-3"></div>
+
+                <button type="button" id="btnSubmitScienceExperiment"
+                        class="btn btn-success btn-lg btn-kid fs-4 mt-3">
+                    <i class="bi bi-journal-check me-2"></i>Registrar Ficha Científica
+                </button>
+
+            <!-- ========================================================= -->
+            <!-- TIPO I: CLASIFICACIÓN POR CATEGORÍAS (Ciencias)           -->
+            <!-- ========================================================= -->
+            {% elif activity.activity_type == 'category_sort' %}
+                <div id="categorySortWrapper" class="my-3"></div>
+
+                <button type="button" id="btnSubmitCategorySort"
+                        class="btn btn-primary btn-lg btn-kid fs-4 mt-3">
+                    <i class="bi bi-table me-2"></i>Comprobar Clasificación
+                </button>
+
+            <!-- ========================================================= -->
+            <!-- TIPOS CLÁSICOS (Pizarra, Vocales, Conteo, Emparejar)      -->
+            <!-- ========================================================= -->
+            {% else %}
+                {% if activity.prompt_text %}
+                <div class="bg-light rounded-4 p-3 my-3 border">
+                    <span class="display-6 fw-bold font-kid text-dark">{{ activity.prompt_text }}</span>
+                </div>
+                {% endif %}
+
+                {% if activity.activity_type == 'drawing_prompt' %}
+                    <div class="d-grid gap-3 mt-4">
+                        <a href="{% url 'activities:canvas' %}?prompt={{ activity.title|urlencode }}"
+                           class="btn btn-warning btn-lg btn-kid fs-4">
+                            <i class="bi bi-palette-fill me-2"></i>Abrir Pizarra para Dibujar
+                        </a>
+                        <button type="button"
+                                data-answer="COMPLETADO"
+                                class="btn btn-outline-success btn-lg rounded-4 fw-bold js-submit-answer">
+                            <i class="bi bi-check-circle-fill me-1"></i> ¡Ya terminé mi dibujo!
+                        </button>
+                    </div>
+                {% else %}
+                    <div class="row g-3 justify-content-center mt-3">
+                        {% for option in activity.get_options_list %}
+                        <div class="col-6 col-sm-4">
+                            <button type="button"
+                                    data-answer="{{ option }}"
+                                    class="btn btn-outline-primary btn-lg btn-kid w-100 fs-3 py-3 js-submit-answer">
+                                {{ option }}
+                            </button>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
             {% endif %}
 
             <!-- Zona de retroalimentación -->
@@ -80,30 +276,5 @@
 {% endblock %}
 
 {% block extra_js %}
-<script>
-async function submitAnswer(answer) {
-    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-    const feedbackBox = document.getElementById('feedbackBox');
-    const nextWrapper = document.getElementById('nextBtnWrapper');
-
-    const response = await fetch("{% url 'activities:check_activity' activity.id %}", {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': csrfToken
-        },
-        body: JSON.stringify({ answer: answer })
-    });
-
-    const data = await response.json();
-    feedbackBox.classList.remove('d-none');
-
-    if (data.correct) {
-        feedbackBox.innerHTML = `<div class="alert alert-success rounded-4 fs-4 fw-bold">${data.message}</div>`;
-        if (nextWrapper) nextWrapper.classList.remove('d-none');
-    } else {
-        feedbackBox.innerHTML = `<div class="alert alert-warning rounded-4 fs-5 fw-bold">${data.message}</div>`;
-    }
-}
-</script>
+<script src="{% static 'js/activity_detail.js' %}"></script>
 {% endblock %}
