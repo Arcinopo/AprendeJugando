@@ -3,11 +3,19 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!canvas) return;
 
     const ctx = canvas.getContext('2d');
+    const canvasWrapper = document.getElementById('canvasWrapper');
+    const eraserCursor = document.getElementById('eraserCursor');
+
     let isDrawing = false;
+    let currentTool = 'pencil'; // 'pencil' | 'eraser'
     let currentColor = '#2B2D42';
     let currentSize = 8;
     let editingDrawingId = null;
     let lastCanvasWidth = 0;
+
+    // Historial para Deshacer trazos (máximo 20 estados)
+    const undoStack = [];
+    const MAX_HISTORY = 20;
 
     const titleInput = document.getElementById('drawingTitle');
     const saveBtn = document.getElementById('saveDrawingBtn');
@@ -15,12 +23,89 @@ document.addEventListener('DOMContentLoaded', () => {
     const editingTitleLabel = document.getElementById('editingTitleLabel');
     const cancelEditBtn = document.getElementById('cancelEditBtn');
     const newDrawingBtn = document.getElementById('newDrawingBtn');
+    const undoBtn = document.getElementById('undoCanvasBtn');
+    const pencilToolBtn = document.getElementById('pencilToolBtn');
+    const eraserToolBtn = document.getElementById('eraserToolBtn');
     const feedbackEl = document.getElementById('canvasFeedback');
 
     function showFeedback(message, type = 'success') {
         if (!feedbackEl) return;
         feedbackEl.className = `alert alert-${type} rounded-4 fw-bold mb-3`;
         feedbackEl.textContent = message;
+    }
+
+    function updateUndoButton() {
+        if (undoBtn) {
+            undoBtn.disabled = undoStack.length <= 1;
+        }
+    }
+
+    function pushHistorySnapshot() {
+        const snapshot = canvas.toDataURL('image/png');
+        if (undoStack.length > 0 && undoStack[undoStack.length - 1] === snapshot) {
+            return;
+        }
+        undoStack.push(snapshot);
+        if (undoStack.length > MAX_HISTORY) {
+            undoStack.shift();
+        }
+        updateUndoButton();
+    }
+
+    function restoreSnapshot(dataUrl) {
+        const img = new Image();
+        img.onload = () => {
+            clearCanvasSurface();
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        };
+        img.src = dataUrl;
+    }
+
+    function undoLastStroke() {
+        if (undoStack.length <= 1) return;
+        undoStack.pop();
+        const previousSnapshot = undoStack[undoStack.length - 1];
+        restoreSnapshot(previousSnapshot);
+        updateUndoButton();
+    }
+
+    function getActiveLineWidth() {
+        return currentTool === 'eraser' ? Math.round(currentSize * 2.4) : currentSize;
+    }
+
+    function updateEraserCursorSize() {
+        if (!eraserCursor) return;
+        const size = getActiveLineWidth();
+        eraserCursor.style.width = `${size}px`;
+        eraserCursor.style.height = `${size}px`;
+    }
+
+    function setTool(tool) {
+        currentTool = tool;
+        updateEraserCursorSize();
+
+        if (pencilToolBtn && eraserToolBtn) {
+            if (tool === 'eraser') {
+                eraserToolBtn.classList.remove('btn-outline-danger');
+                eraserToolBtn.classList.add('btn-danger', 'text-white', 'active');
+                pencilToolBtn.classList.remove('btn-primary', 'active');
+                pencilToolBtn.classList.add('btn-outline-primary');
+                document.querySelectorAll('.color-swatch').forEach(b => b.classList.remove('active'));
+                if (canvasWrapper) canvasWrapper.classList.add('eraser-mode');
+            } else {
+                pencilToolBtn.classList.remove('btn-outline-primary');
+                pencilToolBtn.classList.add('btn-primary', 'active');
+                eraserToolBtn.classList.remove('btn-danger', 'text-white', 'active');
+                eraserToolBtn.classList.add('btn-outline-danger');
+                if (canvasWrapper) canvasWrapper.classList.remove('eraser-mode');
+                if (eraserCursor) eraserCursor.classList.add('d-none');
+
+                // Re-marcar el color activo en la paleta
+                document.querySelectorAll('.color-swatch').forEach(b => {
+                    b.classList.toggle('active', b.dataset.color === currentColor);
+                });
+            }
+        }
     }
 
     function clearCanvasSurface() {
@@ -44,10 +129,13 @@ document.addEventListener('DOMContentLoaded', () => {
             const img = new Image();
             img.onload = () => ctx.drawImage(img, 0, 0);
             img.src = savedData;
+        } else {
+            pushHistorySnapshot();
         }
     }
 
     resizeCanvas(true);
+    updateEraserCursorSize();
     window.addEventListener('resize', () => resizeCanvas(false));
 
     function getCoordinates(e) {
@@ -64,23 +152,45 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     }
 
+    function moveEraserCursor(pos) {
+        if (!eraserCursor) return;
+        if (currentTool !== 'eraser') {
+            eraserCursor.classList.add('d-none');
+            return;
+        }
+        eraserCursor.classList.remove('d-none');
+        eraserCursor.style.left = `${pos.x}px`;
+        eraserCursor.style.top = `${pos.y}px`;
+    }
+
     function startDraw(e) {
         if (e.cancelable) e.preventDefault();
         isDrawing = true;
         const pos = getCoordinates(e);
+        moveEraserCursor(pos);
+
         ctx.beginPath();
         ctx.moveTo(pos.x, pos.y);
+        // Dibujar un punto inicial para toques cortos (tap)
+        ctx.lineWidth = getActiveLineWidth();
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.strokeStyle = currentTool === 'eraser' ? '#FFFFFF' : currentColor;
+        ctx.lineTo(pos.x + 0.01, pos.y + 0.01);
+        ctx.stroke();
     }
 
     function draw(e) {
+        const pos = getCoordinates(e);
+        moveEraserCursor(pos);
+
         if (!isDrawing) return;
         if (e.cancelable) e.preventDefault();
-        const pos = getCoordinates(e);
 
-        ctx.lineWidth = currentSize;
+        ctx.lineWidth = getActiveLineWidth();
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
-        ctx.strokeStyle = currentColor;
+        ctx.strokeStyle = currentTool === 'eraser' ? '#FFFFFF' : currentColor;
 
         ctx.lineTo(pos.x, pos.y);
         ctx.stroke();
@@ -90,34 +200,60 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!isDrawing) return;
         isDrawing = false;
         ctx.closePath();
+        pushHistorySnapshot();
     }
 
     // Eventos Ratón (PC)
     canvas.addEventListener('mousedown', startDraw);
     canvas.addEventListener('mousemove', draw);
     canvas.addEventListener('mouseup', stopDraw);
-    canvas.addEventListener('mouseleave', stopDraw);
+    canvas.addEventListener('mouseleave', () => {
+        if (eraserCursor) eraserCursor.classList.add('d-none');
+        stopDraw();
+    });
 
     // Eventos Táctiles (Móvil / Tablet)
     canvas.addEventListener('touchstart', startDraw, { passive: false });
     canvas.addEventListener('touchmove', draw, { passive: false });
-    canvas.addEventListener('touchend', stopDraw);
+    canvas.addEventListener('touchend', () => {
+        if (eraserCursor) eraserCursor.classList.add('d-none');
+        stopDraw();
+    });
 
-    // Selector de Colores
+    // Botones de herramienta Lápiz / Borrador
+    if (pencilToolBtn) {
+        pencilToolBtn.addEventListener('click', () => setTool('pencil'));
+    }
+    if (eraserToolBtn) {
+        eraserToolBtn.addEventListener('click', () => setTool('eraser'));
+    }
+
+    // Botón Deshacer y atajo Ctrl+Z
+    if (undoBtn) {
+        undoBtn.addEventListener('click', undoLastStroke);
+    }
+    document.addEventListener('keydown', (e) => {
+        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z' && document.activeElement !== titleInput) {
+            e.preventDefault();
+            undoLastStroke();
+        }
+    });
+
+    // Selector de Colores (cambia automáticamente a Lápiz)
     document.querySelectorAll('.color-swatch').forEach(btn => {
         btn.addEventListener('click', () => {
-            document.querySelectorAll('.color-swatch').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
             currentColor = btn.dataset.color;
+            setTool('pencil');
         });
     });
 
-    // Selector de Grosor de Pincel
+    // Selector de Grosor de Pincel / Borrador
     document.querySelectorAll('.brush-size').forEach(btn => {
         btn.addEventListener('click', () => {
             document.querySelectorAll('.brush-size').forEach(b => b.classList.remove('btn-dark'));
             btn.classList.add('btn-dark');
             currentSize = parseInt(btn.dataset.size, 10);
+            updateEraserCursorSize();
         });
     });
 
@@ -126,6 +262,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (clearBtn) {
         clearBtn.addEventListener('click', () => {
             clearCanvasSurface();
+            pushHistorySnapshot();
         });
     }
 
@@ -144,6 +281,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         if (clearSurface) {
             clearCanvasSurface();
+            undoStack.length = 0;
+            pushHistorySnapshot();
             if (titleInput) titleInput.value = 'Mi Dibujo Libre';
         }
     }
@@ -166,13 +305,16 @@ document.addEventListener('DOMContentLoaded', () => {
             img.crossOrigin = 'anonymous';
             img.onload = () => {
                 clearCanvasSurface();
-                // Ajustar proporcionalmente dentro del lienzo
                 const scale = Math.min(canvas.width / img.width, canvas.height / img.height, 1);
                 const drawW = img.width * scale;
                 const drawH = img.height * scale;
                 const offsetX = (canvas.width - drawW) / 2;
                 const offsetY = (canvas.height - drawH) / 2;
                 ctx.drawImage(img, offsetX, offsetY, drawW, drawH);
+
+                undoStack.length = 0;
+                pushHistorySnapshot();
+                setTool('pencil');
 
                 editingDrawingId = drawingId;
                 if (titleInput) titleInput.value = drawingTitle;
@@ -187,7 +329,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
                 canvas.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                showFeedback(`Obra "${drawingTitle}" cargada en la pizarra. ¡Continúa dibujando!`, 'info');
+                showFeedback(`Obra "${drawingTitle}" cargada en la pizarra. ¡Usa el lápiz o el borrador para modificarla!`, 'info');
             };
             img.onerror = () => {
                 showFeedback('No se pudo cargar la imagen para editar. Intenta recargar la página.', 'warning');

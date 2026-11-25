@@ -11,7 +11,10 @@
                 <h1 class="h3 fw-bold text-primary mb-0">
                     <i class="bi bi-palette-fill text-warning me-2"></i>Pizarra de Dibujo
                 </h1>
-                <div class="d-flex gap-2">
+                <div class="d-flex flex-wrap gap-2">
+                    <button type="button" id="undoCanvasBtn" class="btn btn-outline-secondary rounded-pill fw-bold" disabled title="Deshacer último trazo (Ctrl+Z)">
+                        <i class="bi bi-arrow-counterclockwise me-1"></i> Deshacer
+                    </button>
                     <button type="button" id="newDrawingBtn" class="btn btn-outline-primary rounded-pill fw-bold d-none">
                         <i class="bi bi-plus-circle me-1"></i> Nuevo
                     </button>
@@ -37,9 +40,20 @@
                        value="{{ prompt_title }}" placeholder="Ponle un nombre a tu dibujo...">
             </div>
 
-            <!-- Paleta de colores táctil y grosores -->
-            <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3 bg-light p-2 rounded-4">
-                <div class="d-flex flex-wrap gap-2">
+            <!-- Barra de herramientas: Lápiz / Borrador, Colores y Grosor -->
+            <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3 bg-light p-2 p-md-3 rounded-4 border">
+                <!-- Selector Lápiz / Borrador -->
+                <div class="d-flex align-items-center gap-2">
+                    <button type="button" id="pencilToolBtn" class="btn btn-primary btn-sm rounded-pill fw-bold px-3 tool-btn active">
+                        <i class="bi bi-pencil-fill me-1"></i> Lápiz
+                    </button>
+                    <button type="button" id="eraserToolBtn" class="btn btn-outline-danger btn-sm rounded-pill fw-bold px-3 tool-btn eraser-btn">
+                        <i class="bi bi-eraser-fill me-1"></i> Borrador
+                    </button>
+                </div>
+
+                <!-- Paleta de colores táctil -->
+                <div class="d-flex flex-wrap align-items-center gap-2">
                     <button type="button" class="color-swatch active" data-color="#2B2D42" style="background:#2B2D42;" aria-label="Negro"></button>
                     <button type="button" class="color-swatch" data-color="#EF476F" style="background:#EF476F;" aria-label="Rojo"></button>
                     <button type="button" class="color-swatch" data-color="#FF9F1C" style="background:#FF9F1C;" aria-label="Naranja"></button>
@@ -47,18 +61,20 @@
                     <button type="button" class="color-swatch" data-color="#06D6A0" style="background:#06D6A0;" aria-label="Verde"></button>
                     <button type="button" class="color-swatch" data-color="#118AB2" style="background:#118AB2;" aria-label="Azul"></button>
                     <button type="button" class="color-swatch" data-color="#9B5DE5" style="background:#9B5DE5;" aria-label="Morado"></button>
-                    <button type="button" class="color-swatch" data-color="#FFFFFF" style="background:#FFFFFF;" aria-label="Borrador"></button>
+                    <button type="button" class="color-swatch" data-color="#8D5B4C" style="background:#8D5B4C;" aria-label="Marrón"></button>
                 </div>
 
-                <div class="btn-group" role="group">
+                <!-- Selector de grosor -->
+                <div class="btn-group" role="group" aria-label="Grosor de trazo">
                     <button type="button" class="btn btn-outline-secondary btn-sm brush-size" data-size="4">Fino</button>
                     <button type="button" class="btn btn-outline-secondary btn-dark btn-sm brush-size" data-size="8">Medio</button>
                     <button type="button" class="btn btn-outline-secondary btn-sm brush-size" data-size="16">Grueso</button>
                 </div>
             </div>
 
-            <!-- Lienzo HTML5 -->
-            <div class="canvas-wrapper mb-3">
+            <!-- Lienzo HTML5 con indicador visual del borrador -->
+            <div class="canvas-wrapper mb-3" id="canvasWrapper">
+                <div id="eraserCursor" class="eraser-cursor d-none"></div>
                 <canvas id="drawingCanvas"></canvas>
             </div>
 

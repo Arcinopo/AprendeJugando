@@ -94,6 +94,21 @@ h1, h2, h3, h4, .font-kid {
     border-color: #2B2D42;
 }
 
+.canvas-wrapper.eraser-mode #drawingCanvas {
+    cursor: none;
+}
+
+.eraser-cursor {
+    position: absolute;
+    border: 2.5px dashed #EF476F;
+    background-color: rgba(255, 255, 255, 0.75);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    z-index: 5;
+    box-shadow: 0 0 0 1px rgba(43, 45, 66, 0.25);
+}
+
 /* ========================================================= */
 /* ETAPA 2: CAZADORES DE ERRORES, CÓMIC Y SOPA / CRUCIGRAMA  */
 /* ========================================================= */
